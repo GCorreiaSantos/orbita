@@ -32,7 +32,7 @@ O projeto foi desenvolvido utilizando Flutter e Dart, com o objetivo de proporci
 
 Acesse o aplicativo:
 
-**[Abrir Órbita](https://gcorreriaSantos.github.io/orbita/)**
+**[Abrir Órbita](https://gcorreiaSantos.github.io/orbita/)**
 
 ## 🛠️ Tecnologias utilizadas
 
