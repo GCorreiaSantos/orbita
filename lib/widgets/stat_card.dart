@@ -1,21 +1,16 @@
-
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 // Widget responsável por exibir um cartão com uma estatística do dashboard.
-// Como não possui alterações de estado, utiliza StatelessWidget.
 class StatCard extends StatelessWidget {
-  // Informações que serão exibidas no cartão.
   final String title;
   final String value;
   final String subtitle;
 
-  // Ícone e cores utilizados na parte visual do cartão.
   final IconData icon;
   final Color iconColor;
   final Color iconBackground;
 
-  // Construtor que recebe os dados necessários para montar o cartão.
   const StatCard({
     super.key,
     required this.title,
@@ -28,33 +23,33 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Container cria o cartão e define seu espaçamento e aparência.
     return Container(
-      padding: EdgeInsets.all(24),
+      padding:  EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
-        // Organiza os elementos do cartão na vertical.
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Linha superior com o título e o ícone.
+          // Título e ícone.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Expanded permite que o título ocupe o espaço disponível.
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:  TextStyle(
                     fontSize: 14,
                     color: AppTheme.muted,
                   ),
                 ),
               ),
 
-              // Container cria o fundo do ícone.
+               SizedBox(width: 8),
+
               Container(
                 width: 48,
                 height: 48,
@@ -71,26 +66,42 @@ class StatCard extends StatelessWidget {
             ],
           ),
 
-          // Espaçamento entre o título e o valor.
-          SizedBox(height: 12),
+           SizedBox(height: 12),
 
-          // Exibe o valor principal da estatística.
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.text,
+          // Valor com animação de transição.
+          AnimatedSwitcher(
+            duration:  Duration(milliseconds: 400),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin:  Offset(0, 0.15),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: Text(
+              value,
+              key: ValueKey(value),
+              style:  TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.text,
+              ),
             ),
           ),
 
-          // Espaçamento entre o valor e a descrição.
-          SizedBox(height: 8),
+           SizedBox(height: 8),
 
-          // Exibe uma descrição complementar.
+          // Descrição complementar.
           Text(
             subtitle,
-            style: const TextStyle(
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style:  TextStyle(
               fontSize: 12,
               color: AppTheme.muted,
             ),

@@ -5,222 +5,216 @@ import '../widgets/stat_card.dart';
 import '../widgets/weekly_progress.dart';
 import '../widgets/recent_tasks.dart';
 import '../widgets/subject_card.dart';
+import '../data/task_store.dart';
+import '../data/subject_store.dart';
 
-// Esta tela apresenta um resumo visual da organização dos estudos.
-// Como os dados são demonstrativos e não são alterados nesta tela,
-// utilizamos StatelessWidget.
+// Dashboard conectada ao TaskStore e ao SubjectStore.
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
 
-  // Constrói a interface principal do Dashboard.
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      // Espaçamento interno da tela.
-      padding: const EdgeInsets.all(32),
+    return AnimatedBuilder(
+      animation: SubjectStore.instance,
+      builder: (context, child) {
+        final subjects = SubjectStore.instance.subjects;
 
-      // Organiza os elementos verticalmente.
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cabeçalho do Dashboard.
-          const Text(
-            'Seu próximo passo começa aqui.',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.text,
-            ),
-          ),
+        return AnimatedBuilder(
+          animation: TaskStore.instance,
+          builder: (context, child) {
+            final tasks = TaskStore.instance.tasks;
 
-          const SizedBox(height: 8),
+            final totalTasks = tasks.length;
 
-          const Text(
-            'Acompanhe seu progresso e organize sua rotina de estudos.',
-            style: TextStyle(
-              fontSize: 15,
-              color: AppTheme.muted,
-            ),
-          ),
+            final pendingTasks = tasks.where(
+              (task) => task['status'] == 'Pendente',
+            ).length;
 
-          const SizedBox(height: 32),
+            final completedTasks = tasks.where(
+              (task) => task['status'] == 'Concluída',
+            ).length;
 
-          // Cards com indicadores demonstrativos.
-          // O LayoutBuilder permite adaptar a quantidade de colunas
-          // de acordo com o espaço disponível na tela.
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int columns = 4;
+            final activeSubjects = subjects.length;
 
-              if (constraints.maxWidth < 900) {
-                columns = 2;
-              }
-
-              if (constraints.maxWidth < 500) {
-                columns = 1;
-              }
-
-              return GridView.count(
-                crossAxisCount: columns,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: columns == 1 ? 2.2 : 1.5,
-
-                // Cada StatCard representa um indicador do Dashboard.
+            return SingleChildScrollView(
+              padding:  EdgeInsets.all(32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatCard(
-                    title: 'Total de tarefas',
-                    value: '24',
-                    subtitle: 'Tarefas cadastradas',
-                    icon: Icons.assignment_outlined,
-                    iconColor: const Color(0xFF7561D8),
-                    iconBackground: const Color(0xFFEFE8FF),
-                  ),
-
-                  StatCard(
-                    title: 'Pendentes',
-                    value: '12',
-                    subtitle: 'Precisam da sua atenção',
-                    icon: Icons.schedule_outlined,
-                    iconColor: const Color(0xFFE5A23C),
-                    iconBackground: const Color(0xFFFFF2DF),
-                  ),
-
-                  StatCard(
-                    title: 'Concluídas',
-                    value: '8',
-                    subtitle: 'Você está avançando!',
-                    icon: Icons.check_circle_outline,
-                    iconColor: const Color(0xFF45A985),
-                    iconBackground: const Color(0xFFE2F6ED),
-                  ),
-
-                  StatCard(
-                    title: 'Matérias ativas',
-                    value: '4',
-                    subtitle: 'Matérias em andamento',
-                    icon: Icons.menu_book_outlined,
-                    iconColor: const Color(0xFF5D91D5),
-                    iconBackground: const Color(0xFFE5F0FF),
-                  ),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 32),
-
-          // Seção de progresso semanal e tarefas recentes.
-          // Em telas maiores, os componentes ficam lado a lado.
-          // Em telas menores, são organizados verticalmente.
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= 900) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: WeeklyProgress(),
+                   Text(
+                    'Seu próximo passo começa aqui.',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.text,
                     ),
+                  ),
 
-                    const SizedBox(width: 24),
+                   SizedBox(height: 8),
 
-                    Expanded(
-                      flex: 3,
-                      child: RecentTasks(),
+                   Text(
+                    'Acompanhe seu progresso e organize sua rotina de estudos.',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppTheme.muted,
                     ),
-                  ],
-                );
-              }
+                  ),
 
-              // Layout para telas com menor largura.
-              return Column(
-                children: [
-                  WeeklyProgress(),
+                   SizedBox(height: 32),
 
-                  const SizedBox(height: 24),
+                  // Indicadores dinâmicos.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      int columns = 4;
 
-                  RecentTasks(),
+                      if (constraints.maxWidth < 900) {
+                        columns = 2;
+                      }
+
+                      if (constraints.maxWidth < 500) {
+                        columns = 1;
+                      }
+
+                      return GridView.count(
+                        crossAxisCount: columns,
+                        shrinkWrap: true,
+                        physics:  NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: columns == 1 ? 2.2 : 1.5,
+                        children: [
+                          StatCard(
+                            title: 'Total de tarefas',
+                            value: '$totalTasks',
+                            subtitle: 'Tarefas cadastradas',
+                            icon: Icons.assignment_outlined,
+                            iconColor:  Color(0xFF7561D8),
+                            iconBackground:  Color(0xFFEFE8FF),
+                          ),
+
+                          StatCard(
+                            title: 'Pendentes',
+                            value: '$pendingTasks',
+                            subtitle: 'Precisam da sua atenção',
+                            icon: Icons.schedule_outlined,
+                            iconColor:  Color(0xFFE5A23C),
+                            iconBackground:  Color(0xFFFFF2DF),
+                          ),
+
+                          StatCard(
+                            title: 'Concluídas',
+                            value: '$completedTasks',
+                            subtitle: 'Você está avançando!',
+                            icon: Icons.check_circle_outline,
+                            iconColor:  Color(0xFF45A985),
+                            iconBackground:  Color(0xFFE2F6ED),
+                          ),
+
+                          StatCard(
+                            title: 'Matérias ativas',
+                            value: '$activeSubjects',
+                            subtitle: 'Matérias cadastradas',
+                            icon: Icons.menu_book_outlined,
+                            iconColor:  Color(0xFF5D91D5),
+                            iconBackground:  Color(0xFFE5F0FF),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                   SizedBox(height: 32),
+
+                  // Progresso semanal e tarefas recentes.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth >= 900) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: WeeklyProgress(),
+                            ),
+
+                             SizedBox(width: 24),
+
+                            Expanded(
+                              flex: 3,
+                              child: RecentTasks(),
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          WeeklyProgress(),
+
+                           SizedBox(height: 24),
+
+                          RecentTasks(),
+                        ],
+                      );
+                    },
+                  ),
+
+                   SizedBox(height: 32),
+
+                   Text(
+                    'Minhas matérias',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.text,
+                    ),
+                  ),
+
+                   SizedBox(height: 16),
+
+                  // Cartões dinâmicos de matérias.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final crossAxisCount = constraints.maxWidth >= 900
+                          ? 4
+                          : constraints.maxWidth >= 600
+                              ? 2
+                              : 1;
+
+                      return GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        shrinkWrap: true,
+                        physics:  NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.15,
+
+                        children: subjects.map((subject) {
+                          final name = subject['name'] as String;
+
+                          final progress =
+                              TaskStore.instance.getProgress(name);
+
+                          final taskCount =
+                              TaskStore.instance.getTaskCount(name);
+
+                          return SubjectCard(
+                            name: name,
+                            icon: subject['icon'] as IconData,
+                            color: subject['color'] as Color,
+                            progress: progress,
+                            subtitle: '$taskCount tarefas no total',
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
                 ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 32),
-
-          // Título da seção de matérias.
-          const Text(
-            'Minhas matérias',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.text,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Grid de matérias.
-          // A quantidade de colunas é ajustada conforme a largura.
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth >= 900
-                  ? 4
-                  : constraints.maxWidth >= 600
-                      ? 2
-                      : 1;
-
-              return GridView.count(
-                crossAxisCount: crossAxisCount,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.15,
-
-                // Cards demonstrativos das matérias.
-                // Cada card apresenta nome, ícone, progresso e quantidade.
-                children: [
-                  SubjectCard(
-                    name: 'Matemática',
-                    icon: Icons.calculate_outlined,
-                    color: const Color(0xFF7561D8),
-                    progress: 0.75,
-                    subtitle: '6 tarefas no total',
-                  ),
-
-                  SubjectCard(
-                    name: 'Português',
-                    icon: Icons.menu_book_outlined,
-                    color: const Color(0xFFE69A57),
-                    progress: 0.60,
-                    subtitle: '5 tarefas no total',
-                  ),
-
-                  SubjectCard(
-                    name: 'Biologia',
-                    icon: Icons.biotech_outlined,
-                    color: const Color(0xFF55B89A),
-                    progress: 0.85,
-                    subtitle: '7 tarefas no total',
-                  ),
-
-                  SubjectCard(
-                    name: 'História',
-                    icon: Icons.account_balance_outlined,
-                    color: const Color(0xFFE47791),
-                    progress: 0.45,
-                    subtitle: '6 tarefas no total',
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

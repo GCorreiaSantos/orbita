@@ -1,14 +1,10 @@
-
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../data/subject_store.dart';
 
-// Widget responsável por construir a barra lateral de navegação.
-// Recebe o índice da página selecionada e a função de navegação.
+// Widget responsável pela barra lateral de navegação.
 class Sidebar extends StatelessWidget {
-  // Indica qual página está selecionada no momento.
   final int selectedIndex;
-
-  // Função que comunica ao widget principal qual item foi clicado.
   final Function(int) onItemSelected;
 
   const Sidebar({
@@ -19,7 +15,6 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Container define o tamanho, o fundo e o espaçamento da sidebar.
     return Container(
       width: 260,
       color: Colors.white,
@@ -28,14 +23,12 @@ class Sidebar extends StatelessWidget {
         vertical: 32,
       ),
       child: SingleChildScrollView(
-        // Permite rolar o conteúdo caso não caiba na altura da tela.
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Área da logo e nome do Órbita.
+            // Logo.
             Row(
               children: [
-                // Símbolo da logo.
                 Container(
                   width: 48,
                   height: 48,
@@ -57,8 +50,7 @@ class Sidebar extends StatelessWidget {
 
                  SizedBox(width: 12),
 
-                // Nome do aplicativo.
-                 Text(
+                Text(
                   'órbita',
                   style: TextStyle(
                     fontSize: 30,
@@ -71,8 +63,8 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 48),
 
-            // Título da área de navegação.
-             Text(
+            // Menu principal.
+            Text(
               'SEU ESPAÇO',
               style: TextStyle(
                 fontSize: 13,
@@ -83,7 +75,6 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 16),
 
-            // Item de navegação para o Dashboard.
             _menuItem(
               icon: Icons.grid_view_rounded,
               label: 'Visão geral',
@@ -92,7 +83,6 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 8),
 
-            // Item de navegação para a tela de tarefas.
             _menuItem(
               icon: Icons.task_alt_outlined,
               label: 'Minhas tarefas',
@@ -101,7 +91,6 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 8),
 
-            // Item de navegação para a tela de matérias.
             _menuItem(
               icon: Icons.menu_book_outlined,
               label: 'Minhas matérias',
@@ -110,8 +99,8 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 40),
 
-            // Título da lista visual de matérias.
-             Text(
+            // Lista dinâmica de matérias.
+            Text(
               'MINHAS MATÉRIAS',
               style: TextStyle(
                 fontSize: 13,
@@ -122,15 +111,37 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 20),
 
-            // Exibe as matérias com suas respectivas cores.
-            _subjectItem('Matemática',  Color(0xFF9A83E5)),
-            _subjectItem('Português',  Color(0xFF5B9D97)),
-            _subjectItem('Biologia',  Color(0xFFD09A4D)),
-            _subjectItem('História',  Color(0xFFD17D9E)),
+            AnimatedBuilder(
+              animation: SubjectStore.instance,
+              builder: (context, child) {
+                final subjects = SubjectStore.instance.subjects;
+
+                if (subjects.isEmpty) {
+                  return Text(
+                    'Nenhuma matéria cadastrada.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.muted,
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: subjects.map((subject) {
+                    final name = subject['name'] as String;
+
+                    return _subjectItem(
+                      name,
+                      SubjectStore.instance.getColor(name),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
 
              SizedBox(height: 40),
 
-            // Card com uma mensagem motivacional.
+            // Mensagem motivacional.
             Container(
               width: double.infinity,
               padding:  EdgeInsets.all(16),
@@ -138,7 +149,7 @@ class Sidebar extends StatelessWidget {
                 color:  Color(0xFFF5F1FC),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child:  Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -150,7 +161,7 @@ class Sidebar extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(height: 8),
+                   SizedBox(height: 8),
 
                   Text(
                     'Seu futuro começa com o que você estuda hoje.',
@@ -165,10 +176,10 @@ class Sidebar extends StatelessWidget {
 
              SizedBox(height: 24),
 
-            // Área de identificação do perfil.
+            // Perfil.
             Row(
               children: [
-                 Expanded(
+                Expanded(
                   child: Text(
                     'Ana Ferreira',
                     style: TextStyle(
@@ -178,7 +189,7 @@ class Sidebar extends StatelessWidget {
                   ),
                 ),
 
-                 Icon(
+                Icon(
                   Icons.keyboard_arrow_down,
                   color: AppTheme.muted,
                 ),
@@ -190,22 +201,16 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Constrói um item do menu lateral.
-  // Recebe o ícone, o nome e o índice da página.
+  // Item de navegação.
   Widget _menuItem({
     required IconData icon,
     required String label,
     required int index,
   }) {
-    // Compara o índice do item com a página selecionada.
-    // Se forem iguais, o item recebe o estilo de selecionado.
     final bool selected = selectedIndex == index;
 
     return InkWell(
-      // Executa a função recebida quando o item é clicado.
-      onTap: () {
-        onItemSelected(index);
-      },
+      onTap: () => onItemSelected(index),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
@@ -214,7 +219,6 @@ class Sidebar extends StatelessWidget {
           horizontal: 12,
         ),
         decoration: BoxDecoration(
-          // Muda o fundo conforme o item selecionado.
           color: selected
               ?  Color(0xFFF0EAF8)
               : Colors.transparent,
@@ -222,7 +226,6 @@ class Sidebar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Ícone muda de cor conforme a seleção.
             Icon(
               icon,
               size: 24,
@@ -231,9 +234,8 @@ class Sidebar extends StatelessWidget {
                   : AppTheme.muted,
             ),
 
-            SizedBox(width: 16),
+             SizedBox(width: 16),
 
-            // Nome do item com estilo diferente quando selecionado.
             Text(
               label,
               style: TextStyle(
@@ -252,14 +254,12 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  // Constrói um item visual da lista de matérias.
-  // Recebe o nome da matéria e a cor que será utilizada.
+  // Item visual de matéria.
   Widget _subjectItem(String name, Color color) {
     return Padding(
       padding:  EdgeInsets.only(bottom: 24),
       child: Row(
         children: [
-          // Círculo colorido que identifica visualmente a matéria.
           Container(
             width: 10,
             height: 10,
@@ -269,14 +269,16 @@ class Sidebar extends StatelessWidget {
             ),
           ),
 
-          SizedBox(width: 16),
+           SizedBox(width: 16),
 
-          // Nome da matéria.
-          Text(
-            name,
-            style: TextStyle(
-              fontSize: 15,
-              color: AppTheme.muted,
+          Expanded(
+            child: Text(
+              name,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppTheme.muted,
+              ),
             ),
           ),
         ],

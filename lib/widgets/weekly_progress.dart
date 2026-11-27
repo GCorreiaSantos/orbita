@@ -1,108 +1,166 @@
 
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../data/task_store.dart';
 
-// Widget responsável por exibir o gráfico de progresso semanal.
+// Gráfico semanal baseado nas tarefas concluídas.
 class WeeklyProgress extends StatelessWidget {
   const WeeklyProgress({super.key});
 
+  // Converte uma data no formato dd/MM/yyyy com segurança.
+  DateTime? _parseDate(String? date) {
+    if (date == null || date == 'Sem data' || date.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      final parts = date.split('/');
+
+      if (parts.length != 3) return null;
+
+      return DateTime(
+        int.parse(parts[2]),
+        int.parse(parts[1]),
+        int.parse(parts[0]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dias da semana que serão exibidos abaixo das barras.
-    final days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    return AnimatedBuilder(
+      animation: TaskStore.instance,
+      builder: (context, child) {
+        final days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
-    // Valores de exemplo que definem a altura de cada barra.
-    // Os valores variam de 0 a 1, representando proporções.
-    final values = [0.45, 0.75, 0.55, 0.90, 0.35, 0.65, 0.25];
+        final now = DateTime.now();
 
-    // Container cria o cartão que envolve o gráfico.
-    return Container(
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Título do gráfico.
-          Text(
-            'Progresso semanal',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.text,
-            ),
+        // Encontra a segunda-feira da semana atual.
+        final monday = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: now.weekday - 1));
+
+        // Conta tarefas concluídas por dia na semana atual.
+        final values = List<int>.generate(7, (index) {
+          final day = monday.add(Duration(days: index));
+
+          return TaskStore.instance.tasks.where((task) {
+            if (task['status'] != 'Concluída') return false;
+
+            final taskDate = _parseDate(task['date']?.toString());
+
+            if (taskDate == null) return false;
+
+            return taskDate.year == day.year &&
+                taskDate.month == day.month &&
+                taskDate.day == day.day;
+          }).length;
+        });
+
+        final maxValue = values.fold<int>(
+          0,
+          (previous, current) =>
+              current > previous ? current : previous,
+        );
+
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Progresso semanal',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.text,
+                ),
+              ),
 
-          SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-          // Descrição do gráfico.
-          Text(
-            'Sua atividade ao longo da semana',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.muted,
-            ),
-          ),
+              const Text(
+                'Tarefas concluídas nesta semana',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.muted,
+                ),
+              ),
 
-          SizedBox(height: 28),
+              const SizedBox(height: 28),
 
-          // Define a altura total da área do gráfico.
-          SizedBox(
-            height: 180,
-            child: Row(
-              // Alinha as barras na parte inferior.
-              crossAxisAlignment: CrossAxisAlignment.end,
+              SizedBox(
+                height: 180,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(days.length, (index) {
+                    final barHeight = maxValue == 0
+                        ? 0.0
+                        : (values[index] / maxValue) * 120;
 
-              // Gera uma barra para cada dia da semana.
-              children: List.generate(days.length, (index) {
-                return Expanded(
-                  child: Padding(
-                    // Espaçamento horizontal entre as barras.
-                    padding: EdgeInsetsGeometry.symmetric(horizontal: 6),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Área que permite ajustar a altura da barra.
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${values[index]}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.muted,
+                              ),
+                            ),
 
-                            // Define a altura da barra conforme o valor do dia.
-                            child: FractionallySizedBox(
-                              heightFactor: values[index],
-                              widthFactor: 1,
-                              child: Container(
-                                // Aparência da barra do gráfico.
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primary.withValues(alpha: 0.85),
-                                  borderRadius: BorderRadius.circular(10),
+                            const SizedBox(height: 6),
+
+                            SizedBox(
+                              height: 120,
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                  width: double.infinity,
+                                  height: barHeight,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primary.withValues(
+                                      alpha: 0.85,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
 
-                        SizedBox(height: 12),
+                            const SizedBox(height: 12),
 
-                        // Exibe a abreviação do dia correspondente.
-                        Text(
-                          days[index],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.muted,
-                          ),
+                            Text(
+                              days[index],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.muted,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
